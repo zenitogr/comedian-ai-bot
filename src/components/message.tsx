@@ -16,16 +16,13 @@ interface MessageProps {
 export function Message({ role, content, isLoading }: MessageProps) {
   const [isClient, setIsClient] = useState(false);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
   const { currentPersona } = useContext(PersonaContext);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (role === "system") {
-    return null;
-  }
+  if (role === "system") return null;
 
   console.log('Rendering message:', { role, content, isLoading });
 
@@ -56,39 +53,18 @@ export function Message({ role, content, isLoading }: MessageProps) {
     );
   }
 
-  const variants = {
-    hidden: { 
-      opacity: 0, 
-      x: role === "user" ? -20 : 20 
-    },
-    visible: { 
-      opacity: 1, 
-      x: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    }
-  };
-
   const formattedContent = role === "assistant" && content.startsWith("SYSTEM:") 
     ? `${ASCII_ART[currentPersona].divider}\n${content.replace("SYSTEM:", "")}`
     : content;
 
   return (
-    <motion.div
-      ref={ref}
-      variants={variants}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+    <div
       className={cn(
-        "flex w-full items-start gap-4 px-4 message-container",
+        "flex w-full items-start gap-4 px-4",
         role === "assistant" && "flex-row-reverse"
       )}
-      suppressHydrationWarning
     >
-      <motion.div
-        whileHover={{ scale: 1.1 }}
+      <div
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-lg border text-sm",
           role === "user" 
@@ -97,9 +73,8 @@ export function Message({ role, content, isLoading }: MessageProps) {
         )}
       >
         {role === "user" ? "U" : "AI"}
-      </motion.div>
-      <motion.div
-        layout
+      </div>
+      <div
         className={cn(
           "flex-1 rounded-lg px-4 py-2 text-sm message-content",
           role === "user"
@@ -112,11 +87,11 @@ export function Message({ role, content, isLoading }: MessageProps) {
         ) : role === "assistant" ? (
           <TypingEffect text={formattedContent} />
         ) : (
-          <span className="whitespace-pre-wrap" suppressHydrationWarning>
+          <span className="whitespace-pre-wrap">
             {formattedContent}
           </span>
         )}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 } 

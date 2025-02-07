@@ -6,7 +6,7 @@ interface TypingEffectProps {
   speed?: number;
 }
 
-export function TypingEffect({ text, speed = 30 }: TypingEffectProps) {
+export function TypingEffect({ text, speed = 10 }: TypingEffectProps) {
   const [displayedText, setDisplayedText] = useState("");
   const controls = useAnimationControls();
 
@@ -16,8 +16,9 @@ export function TypingEffect({ text, speed = 30 }: TypingEffectProps) {
 
     const interval = setInterval(() => {
       if (index < text.length) {
-        setDisplayedText(prev => prev + text[index]);
-        index++;
+        const charsToAdd = Math.min(3, text.length - index);
+        setDisplayedText(prev => prev + text.slice(index, index + charsToAdd));
+        index += charsToAdd;
       } else {
         clearInterval(interval);
         controls.start({ opacity: 1 });

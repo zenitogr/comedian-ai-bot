@@ -166,25 +166,17 @@ export default function Home() {
         </div>
         
         <div className="flex-1 overflow-y-auto space-y-4 p-4 bg-chat-bubble/10 rounded-lg">
-          {messages.map((message, i) => {
-            console.log('Rendering message:', message);
-            return (
-              <div
-                key={i}
-                className="message-container animate-fade-in"
-                style={{ 
-                  animationDelay: `${i * 100}ms`,
-                  opacity: 1,
-                  animation: 'fadeIn 0.5s ease forwards'
-                }}
-              >
-                <Message 
-                  role={message.role} 
-                  content={message.content} 
-                />
-              </div>
-            );
-          })}
+          {messages.map((message, i) => (
+            <div
+              key={i}
+              className="message-container"
+            >
+              <Message 
+                role={message.role} 
+                content={message.content} 
+              />
+            </div>
+          ))}
           {isLoading && (
             <Message role="assistant" content="" isLoading />
           )}
