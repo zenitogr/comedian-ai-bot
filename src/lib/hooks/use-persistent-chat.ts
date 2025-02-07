@@ -4,10 +4,20 @@ import type { PersonaKey } from '@/lib/personas';
 
 const STORAGE_KEY = 'cyberchat-history';
 const PERSONA_KEY = 'cyberchat-persona';
+const ACTIVE_CHAT_KEY = 'cyberchat-active-chat';
+const CHATS_LIST_KEY = 'cyberchat-chats';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+}
+
+interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: string;
+  persona: PersonaKey;
 }
 
 const getStoredPersona = (): PersonaKey => {
@@ -18,32 +28,59 @@ const getStoredPersona = (): PersonaKey => {
 export function usePersistentChat() {
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChat, setActiveChat] = useState<string | null>(null);
   
   // Load data after mount
   useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setMessages(JSON.parse(stored));
+        // Load chats list
+        const storedChats = localStorage.getItem(CHATS_LIST_KEY);
+        const parsedChats = storedChats ? JSON.parse(storedChats) : [];
+        setChats(parsedChats);
+
+        // Load active chat
+        const storedActiveChat = localStorage.getItem(ACTIVE_CHAT_KEY);
+        if (storedActiveChat) {
+          setActiveChat(storedActiveChat);
+          const activeMessages = parsedChats.find((c: Chat) => c.id === storedActiveChat)?.messages || [];
+          setMessages(activeMessages);
+        } else if (parsedChats.length > 0) {
+          setActiveChat(parsedChats[0].id);
+          setMessages(parsedChats[0].messages);
         }
       } catch (error) {
-        console.error('Error loading chat history:', error);
+        console.error('Error loading chat data:', error);
       }
     }
   }, []);
 
   // Only save after mount
   useEffect(() => {
-    if (mounted) {
+    if (mounted && activeChat) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        // Don't update chats state if the messages are the same
+        const currentChat = chats.find(chat => chat.id === activeChat);
+        if (JSON.stringify(currentChat?.messages) === JSON.stringify(messages)) {
+          return;
+        }
+
+        const updatedChats = chats.map(chat => 
+          chat.id === activeChat ? { ...chat, messages } : chat
+        );
+        
+        // Only update state if there's an actual change
+        if (JSON.stringify(updatedChats) !== JSON.stringify(chats)) {
+          setChats(updatedChats);
+          localStorage.setItem(CHATS_LIST_KEY, JSON.stringify(updatedChats));
+        }
       } catch (error) {
         console.error('Error saving chat history:', error);
       }
     }
-  }, [messages, mounted]);
+  }, [messages, mounted, activeChat]);
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -132,6 +169,33 @@ export function usePersistentChat() {
     soundPlayer.play('command');
   }, []);
 
+  const createNewChat = useCallback(() => {
+    const newChat: Chat = {
+      id: Date.now().toString(),
+      title: 'New Chat',
+      messages: [],
+      createdAt: new Date().toISOString(),
+      persona: currentPersona,
+    };
+
+    setChats(prev => [newChat, ...prev]);
+    setActiveChat(newChat.id);
+    setMessages([]);
+    localStorage.setItem(CHATS_LIST_KEY, JSON.stringify([newChat, ...chats]));
+    localStorage.setItem(ACTIVE_CHAT_KEY, newChat.id);
+    soundPlayer.play('command');
+  }, [chats, currentPersona]);
+
+  const switchChat = useCallback((chatId: string) => {
+    const chat = chats.find(c => c.id === chatId);
+    if (chat) {
+      setActiveChat(chatId);
+      setMessages(chat.messages);
+      localStorage.setItem(ACTIVE_CHAT_KEY, chatId);
+      soundPlayer.play('command');
+    }
+  }, [chats]);
+
   return {
     messages,
     input,
@@ -142,6 +206,10 @@ export function usePersistentChat() {
     clearHistory,
     setInput,
     currentPersona,
-    changePersona
+    changePersona,
+    chats,
+    activeChat,
+    createNewChat,
+    switchChat,
   };
 } 

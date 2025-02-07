@@ -9,6 +9,7 @@ import { MatrixRain } from "@/components/matrix-rain";
 import { PersonaIndicator } from "@/components/persona-indicator";
 import { SoundToggle } from "@/components/sound-toggle";
 import { PersonaProvider } from "@/lib/persona-context";
+import { ChatList } from "@/components/chat-list";
 
 // Create a safe version of useLayoutEffect that falls back to useEffect on server
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -26,7 +27,11 @@ export default function Home() {
     clearHistory,
     setInput,
     currentPersona,
-    changePersona
+    changePersona,
+    chats,
+    activeChat,
+    createNewChat,
+    switchChat
   } = usePersistentChat();
 
   console.debug('🔍 Current chat state:', {
@@ -155,6 +160,12 @@ export default function Home() {
           />
           <div className="flex items-center gap-4">
             <PersonaIndicator persona={currentPersona} />
+            <ChatList
+              chats={chats}
+              activeChat={activeChat}
+              onSelectChat={switchChat}
+              onNewChat={createNewChat}
+            />
             <SoundToggle />
             <button
               onClick={clearHistory}
