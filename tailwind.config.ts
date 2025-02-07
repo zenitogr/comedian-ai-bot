@@ -27,8 +27,29 @@ export default {
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease forwards',
-      }
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            color: 'var(--foreground)',
+            a: {
+              color: 'var(--neon-blue)',
+              '&:hover': {
+                color: 'var(--neon-pink)',
+              },
+            },
+            code: {
+              color: 'var(--neon-pink)',
+            },
+            'pre code': {
+              color: 'var(--foreground)',
+            },
+          },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 } satisfies Config;

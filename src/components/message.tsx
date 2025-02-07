@@ -75,7 +75,7 @@ export function Message({ role, content, isLoading }: MessageProps) {
         {role === "user" ? "U" : "AI"}
       </div>
       <div className={cn(
-        "flex-1 rounded-lg px-4 py-2 text-sm",
+        "flex-1 rounded-lg px-4 py-2 text-sm overflow-x-auto",
         role === "user"
           ? "bg-chat-bubble text-foreground"
           : "bg-chat-bubble/50 text-foreground"
