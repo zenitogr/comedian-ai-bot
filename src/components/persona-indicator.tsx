@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer";
+import { motion, AnimatePresence } from "framer-motion";
 import { PersonaKey } from "@/lib/personas";
 
 const PERSONA_COLORS = {

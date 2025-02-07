@@ -97,8 +97,10 @@ export function usePersistentChat() {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input.trim() };
-    console.log('💬 Adding user message:', userMessage);
-    setMessages(prev => [...prev, userMessage]);
+    
+    // Create a stable reference to the current messages plus the new user message
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages);
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -109,40 +111,38 @@ export function usePersistentChat() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
+          messages: currentMessages, // Use the stable reference
           persona: currentPersona
         }),
       });
 
       if (!response.ok) throw new Error('Failed to send message');
-      
       if (!response.body) throw new Error('No response body');
       
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
 
-      // Read the streaming response
+      // Add initial assistant message using the stable reference
+      setMessages([...currentMessages, { role: 'assistant', content: '' }]);
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
         const chunk = decoder.decode(value);
         assistantMessage += chunk;
-        console.log('💬 Received chunk:', chunk);
         
-        // Update messages with partial response
+        // Update using a callback to ensure we have the latest state
         setMessages(prev => {
-          const newMessages = [...prev];
-          console.log('💬 Current messages:', newMessages);
-          // Update or add the assistant message
-          if (newMessages[newMessages.length - 1]?.role === 'assistant') {
-            newMessages[newMessages.length - 1].content = assistantMessage;
-          } else {
-            newMessages.push({ role: 'assistant', content: assistantMessage });
+          // Only update if the last message is the assistant's message
+          if (prev[prev.length - 1]?.role !== 'assistant') {
+            return [...prev, { role: 'assistant', content: assistantMessage }];
           }
-          console.log('💬 Updated messages:', newMessages);
-          return newMessages;
+          // Update the last message's content
+          return prev.map((msg, idx) => 
+            idx === prev.length - 1 ? { ...msg, content: assistantMessage } : msg
+          );
         });
       }
 
@@ -151,6 +151,9 @@ export function usePersistentChat() {
       console.error("🚨 Chat error:", err);
       soundPlayer.play('error');
       setError(err instanceof Error ? err : new Error(String(err)));
+      
+      // Revert to the messages with just the user message if there's an error
+      setMessages(currentMessages);
     } finally {
       setIsLoading(false);
     }

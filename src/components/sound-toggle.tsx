@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer";
+import { motion } from "framer-motion";
 import { soundPlayer } from "@/lib/sounds";
 
 export function SoundToggle() {
